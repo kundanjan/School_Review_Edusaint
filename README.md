@@ -216,6 +216,6 @@ This project is created for educational purposes as part of the Edusaint Web Dev
 
 ---
 
-**Created by**: [Your Name]  
-**Date**: [Current Date]  
+**Created by**: Kundan Jangale 
+**Date**: 11-07-2025
 **Version**: 1.0.0
