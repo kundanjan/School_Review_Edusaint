@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Reviews - Edusaint</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto;
+            max-width: 1200px;
+            padding: 2rem;
+        }
+        .header-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+        .review-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-left: 4px solid #667eea;
+        }
+        .review-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .rating-display {
+            color: #ffd700;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .rating-display .empty-star {
+            color: #ddd;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        .school-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        .reviewer-name {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .review-date {
+            color: #999;
+            font-size: 0.8rem;
+        }
+        .comment-text {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+        .search-box {
+            margin-bottom: 1.5rem;
+        }
+        .search-box .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s ease;
+        }
+        .search-box .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="header-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <h1 class="text-center mb-4 text-primary">School Reviews</h1>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Action Buttons -->
+            <div class="text-center mb-4">
+                <a href="{{ url_for('add_review') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Review
+                </a>
+            </div>
+            
+            {% if reviews %}
+                <!-- Statistics -->
+                <div class="stats-card">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h3>{{ reviews|length }}</h3>
+                            <p class="mb-0">Total Reviews</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3>{{ "%.1f"|format(reviews|map(attribute='rating')|sum / reviews|length) }}</h3>
+                            <p class="mb-0">Average Rating</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3>{{ reviews|map(attribute='school_name')|unique|list|length }}</h3>
+                            <p class="mb-0">Schools Reviewed</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Box -->
+                <div class="search-box">
+                    <input type="text" 
+                           class="form-control" 
+                           id="searchInput" 
+                           placeholder="Search by school name, reviewer, or comment..."
+                           onkeyup="filterReviews()">
+                </div>
+                
+                <!-- Reviews List -->
+                <div id="reviewsList">
+                    {% for review in reviews %}
+                        <div class="review-card" data-search="{{ (review.school_name + ' ' + review.reviewer_name + ' ' + review.comment)|lower }}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="school-name">
+                                        <i class="fas fa-graduation-cap me-2"></i>{{ review.school_name }}
+                                    </div>
+                                    <div class="reviewer-name">
+                                        <i class="fas fa-user me-2"></i>by {{ review.reviewer_name }}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="rating-display">
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= review.rating %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="fas fa-star empty-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if review.created_at %}
+                                        <div class="review-date">
+                                            <i class="fas fa-calendar-alt me-1"></i>{{ review.created_at }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="comment-text">
+                                <i class="fas fa-quote-left me-2"></i>{{ review.comment }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- No Results Message -->
+                <div id="noResults" class="empty-state" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h4>No Reviews Found</h4>
+                    <p>Try adjusting your search terms</p>
+                </div>
+                
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h4>No Reviews Yet</h4>
+                    <p>Be the first to share your school experience!</p>
+                    <a href="{{ url_for('add_review') }}" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus me-2"></i>Add First Review
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Search functionality
+        function filterReviews() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const reviewCards = document.querySelectorAll('.review-card');
+            const noResults = document.getElementById('noResults');
+            let visibleCount = 0;
+            
+            reviewCards.forEach(card => {
+                const searchData = card.getAttribute('data-search');
+                if (searchData.includes(searchTerm)) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            if (visibleCount === 0 && searchTerm.trim() !== '') {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+        
+        // Smooth scroll to top
+        document.addEventListener('DOMContentLoaded', function() {
+            const reviewCards = document.querySelectorAll('.review-card');
+            reviewCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>

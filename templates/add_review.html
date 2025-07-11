@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add School Review - Edusaint</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .rating-stars input[type="radio"] {
+            display: none;
+        }
+
+        .rating-stars label {
+            font-size: 1.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .rating-stars label:hover,
+        .rating-stars label.active {
+            color: #ffd700;
+        }
+
+        .header-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="header-icon">
+                <i class="fas fa-school"></i>
+            </div>
+            <h1 class="text-center mb-4 text-primary">Add School Review</h1>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+                role="alert">
+                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <form method="POST" novalidate onsubmit="return validateForm()">
+                <!-- School Name -->
+                <div class="mb-3">
+                    <label for="school_name" class="form-label">
+                        <i class="fas fa-graduation-cap me-2"></i>School Name
+                    </label>
+                    <input type="text" class="form-control" id="school_name" name="school_name"
+                        value="{{ form_data.school_name if form_data else '' }}" placeholder="Enter school name"
+                        maxlength="100" minlength="3" pattern="^[A-Za-z0-9\s\.,'-]+$" required>
+                    <div class="invalid-feedback">Please enter a valid school name (3-100 characters).</div>
+                </div>
+
+                <!-- Reviewer Name -->
+                <div class="mb-3">
+                    <label for="reviewer_name" class="form-label">
+                        <i class="fas fa-user me-2"></i>Your Name
+                    </label>
+                    <input type="text" class="form-control" id="reviewer_name" name="reviewer_name"
+                        value="{{ form_data.reviewer_name if form_data else '' }}" placeholder="Enter your name"
+                        maxlength="100" minlength="2" pattern="^[A-Za-z\s'-]+$" required>
+                    <div class="invalid-feedback">Please enter a valid name (2-100 alphabetic characters).</div>
+                </div>
+
+                <!-- Rating -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-star me-2"></i>Rating
+                    </label>
+                    <div class="rating-stars" id="rating-stars">
+                        {% for i in range(1, 6) %}
+                        <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if form_data and
+                            form_data.rating==i|string %}checked{% endif %}>
+                        <label for="star{{ i }}" class="star-label">★</label>
+                        {% endfor %}
+                    </div>
+                    <small class="text-muted">Click on stars to rate (1-5)</small>
+                    <div class="text-danger d-none" id="rating-error">Please select a rating.</div>
+                </div>
+
+                <!-- Comment -->
+                <div class="mb-3">
+                    <label for="comment" class="form-label">
+                        <i class="fas fa-comment me-2"></i>Review Comment
+                    </label>
+                    <textarea class="form-control" id="comment" name="comment" rows="4"
+                        placeholder="Share your experience about this school..." maxlength="1000" minlength="10"
+                        required>{{ form_data.comment if form_data else '' }}</textarea>
+                    <div class="form-text">Minimum 10, maximum 1000 characters.</div>
+                    <div class="invalid-feedback">Please enter at least 10 characters.</div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Review
+                    </button>
+                    <a href="{{ url_for('reviews') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-eye me-2"></i>View All Reviews
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Star rating functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const stars = document.querySelectorAll('.star-label');
+            const radioButtons = document.querySelectorAll('input[name="rating"]');
+            const ratingError = document.getElementById('rating-error');
+            const form = document.querySelector('form');
+
+            // Initialize stars on load
+            updateStars();
+
+            stars.forEach((star, index) => {
+                // Enable focus for keyboard users
+                star.setAttribute('tabindex', 0);
+
+                star.addEventListener('click', function () {
+                    radioButtons[index].checked = true;
+                    updateStars();
+                });
+
+                star.addEventListener('mouseover', function () {
+                    highlightStars(index);
+                });
+
+                star.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        radioButtons[index].checked = true;
+                        updateStars();
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            document.querySelector('.rating-stars').addEventListener('mouseleave', function () {
+                updateStars();
+            });
+
+            function updateStars() {
+                const checkedIndex = Array.from(radioButtons).findIndex(radio => radio.checked);
+                highlightStars(checkedIndex);
+            }
+
+            function highlightStars(index) {
+                stars.forEach((star, i) => {
+                    if (i <= index) {
+                        star.classList.add('active');
+                    } else {
+                        star.classList.remove('active');
+                    }
+                });
+            }
+
+            // Form validation for rating
+            form.addEventListener('submit', function (e) {
+                const rating = document.querySelector('input[name="rating"]:checked');
+                if (!rating) {
+                    e.preventDefault();
+                    ratingError.classList.remove('d-none');
+                } else {
+                    ratingError.classList.add('d-none');
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>
